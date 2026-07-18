@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Short Stay 短租平台{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">🏠 Short Stay</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'property_list' %}">
+                            <i class="bi bi-house"></i> 找房源
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'rental_requests_list' %}">
+                            <i class="bi bi-search-heart"></i> 租客需求
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                    {% if user.role == 'landlord' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'landlord_properties' %}">
+                            <i class="bi bi-house-door"></i> 我的房源
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'landlord_bookings' %}">
+                            <i class="bi bi-clipboard-check"></i> 預訂管理
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'my_bookings' %}">
+                            <i class="bi bi-calendar-check"></i> 我的預訂
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'my_rental_requests' %}">
+                            <i class="bi bi-list-check"></i> 我的需求
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% if user.is_superuser %}
+                            <li><a class="dropdown-item" href="/admin/">管理後台</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            {% endif %}
+                            <li>
+                                <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">登出</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">登入</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 訊息提示 -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 主要內容 -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Toast 通知容器 -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="toast show" role="alert" data-bs-autohide="true" data-bs-delay="5000">
+            <div
+                class="toast-header bg-{{ message.tags }}{% if message.tags == 'error' %}-danger{% elif message.tags == 'warning' %}{% elif message.tags == 'info' %}{% else %}-success{% endif %} text-white">
+                <i
+                    class="bi bi-{% if message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% elif message.tags == 'info' %}info-circle{% else %}check-circle{% endif %} me-2"></i>
+                <strong class="me-auto">
+                    {% if message.tags == 'error' %}錯誤
+                    {% elif message.tags == 'warning' %}警告
+                    {% elif message.tags == 'info' %}提示
+                    {% else %}成功
+                    {% endif %}
+                </strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                {{ message }}
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <footer class="bg-light py-4 mt-5">
+        <div class="container text-center text-muted">
+            <p>&copy; 2025 Short Stay 短租平台. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 自动隐藏Toast -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var toasts = document.querySelectorAll('.toast');
+            toasts.forEach(function (toast) {
+                var bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+            });
+        });
+    </script>
+
+    <style>
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+
+            .btn-lg {
+                font-size: 1rem;
+                padding: 0.75rem 1.5rem;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+
+            .table-responsive {
+                font-size: 0.875rem;
+            }
+        }
+
+        /* Toast 样式优化 */
+        .toast-header {
+            border: none;
+        }
+
+        .toast {
+            min-width: 300px;
+        }
+
+        /* 登出按钮样式 */
+        .dropdown-item button.dropdown-item {
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            color: inherit;
+            font: inherit;
+            cursor: pointer;
+        }
+    </style>
+</body>
+
+</html>

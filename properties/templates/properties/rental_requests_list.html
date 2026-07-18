@@ -1,0 +1,117 @@
+{% extends 'properties/base.html' %}
+
+{% block title %}租客需求列表 - Short Stay{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1><i class="bi bi-search-heart"></i> 租客找房需求</h1>
+            <p class="text-muted">房東可以查看租客的找房需求，主動提供合適的房源</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if user.is_authenticated and user.role == 'tenant' %}
+            <a href="{% url 'create_rental_request' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> 發布找房需求
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 搜索和篩選 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" name="search" class="form-control" placeholder="搜索關鍵字" value="{{ search }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="city" class="form-select">
+                        <option value="">所有城市</option>
+                        {% for c in cities %}
+                        <option value="{{ c }}" {% if c == city %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="budget" class="form-select">
+                        <option value="">所有預算</option>
+                        <option value="0-1000" {% if budget == '0-1000' %}selected{% endif %}>NT$0 - NT$1,000</option>
+                        <option value="1000-2000" {% if budget == '1000-2000' %}selected{% endif %}>NT$1,000 - NT$2,000</option>
+                        <option value="2000-3000" {% if budget == '2000-3000' %}selected{% endif %}>NT$2,000 - NT$3,000</option>
+                        <option value="3000-5000" {% if budget == '3000-5000' %}selected{% endif %}>NT$3,000 - NT$5,000</option>
+                        <option value="5000+" {% if budget == '5000+' %}selected{% endif %}>NT$5,000+</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="property_type" class="form-select">
+                        <option value="">所有房型</option>
+                        <option value="entire" {% if property_type == 'entire' %}selected{% endif %}>整套房</option>
+                        <option value="private" {% if property_type == 'private' %}selected{% endif %}>獨立房間</option>
+                        <option value="shared" {% if property_type == 'shared' %}selected{% endif %}>共享房間</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> 搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 需求列表 -->
+    <div class="row">
+        {% if requests %}
+            {% for req in requests %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ req.title }}</h5>
+                        <p class="card-text text-muted small">{{ req.description|truncatewords:20 }}</p>
+                        
+                        <div class="mb-2">
+                            <span class="badge bg-primary">{{ req.get_property_type_display }}</span>
+                            <span class="badge bg-success">{{ req.get_budget_range_display }}</span>
+                        </div>
+                        
+                        <div class="small text-muted mb-3">
+                            <div><i class="bi bi-geo-alt"></i> {{ req.preferred_city }}{% if req.preferred_district %} - {{ req.preferred_district }}{% endif %}</div>
+                            <div><i class="bi bi-people"></i> {{ req.max_guests }} 人</div>
+                            <div><i class="bi bi-door-open"></i> {{ req.min_bedrooms }} 臥室 / {{ req.min_bathrooms }} 浴室</div>
+                            {% if req.move_in_date %}
+                            <div><i class="bi bi-calendar"></i> 期望入住：{{ req.move_in_date }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-person"></i> {{ req.tenant.username }}
+                            </small>
+                            <a href="{% url 'rental_request_detail' req.pk %}" class="btn btn-sm btn-outline-primary">
+                                查看詳情
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        發布於 {{ req.created_at|date:"Y/m/d" }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <i class="bi bi-info-circle"></i> 目前沒有找房需求
+                    {% if user.is_authenticated and user.role == 'tenant' %}
+                    <br>
+                    <a href="{% url 'create_rental_request' %}" class="btn btn-primary mt-3">
+                        成為第一個發布需求的人
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

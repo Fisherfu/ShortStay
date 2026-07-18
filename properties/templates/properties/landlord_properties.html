@@ -1,0 +1,73 @@
+{% extends 'properties/base.html' %}
+
+{% block title %}我的房源 - Short Stay{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-house-door"></i> 我的房源</h2>
+        <a href="{% url 'property_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> 發布新房源
+        </a>
+    </div>
+
+    {% if properties %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for property in properties %}
+        <div class="col">
+            <div class="card h-100">
+                {% if property.images.first %}
+                <img src="{{ property.images.first.image.url }}" class="card-img-top" alt="{{ property.title }}"
+                    style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center"
+                    style="height: 200px;">
+                    <i class="bi bi-image text-white" style="font-size: 3rem;"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ property.title }}</h5>
+                    <p class="card-text text-muted">
+                        <i class="bi bi-geo-alt"></i> {{ property.city }} {{ property.district }}
+                    </p>
+                    <p class="card-text">
+                        <strong class="text-primary">${{ property.price_per_night }}</strong> / 晚
+                    </p>
+                    <div class="mb-2">
+                        <span class="badge bg-{{ property.is_available|yesno:'success,secondary' }}">
+                            {{ property.is_available|yesno:'可預訂,已下架' }}
+                        </span>
+                        <span class="badge bg-info">{{ property.get_property_type_display }}</span>
+                    </div>
+                    <p class="card-text small text-muted">
+                        <i class="bi bi-door-open"></i> {{ property.bedrooms }} 臥室 ·
+                        <i class="bi bi-water"></i> {{ property.bathrooms }} 浴室 ·
+                        <i class="bi bi-people"></i> {{ property.max_guests }} 人
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{% url 'property_edit' property.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> 編輯
+                        </a>
+                        <a href="{% url 'property_delete' property.pk %}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i> 刪除
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+        <h4 class="mt-3">還沒有房源</h4>
+        <p>開始發布您的第一個房源吧！</p>
+        <a href="{% url 'property_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> 發布房源
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

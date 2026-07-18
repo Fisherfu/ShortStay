@@ -1,0 +1,477 @@
+{% extends 'properties/base.html' %}
+
+{% block title %}預訂 {{ property.title }} - Short Stay{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'property_list' %}">首頁</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'property_detail' property.pk %}">{{ property.title }}</a></li>
+            <li class="breadcrumb-item active">預訂</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-calendar-check"></i> 預訂房源</h4>
+                </div>
+                <div class="card-body">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <h6><i class="bi bi-exclamation-triangle"></i> 請修正以下錯誤：</h6>
+                        {{ form.non_field_errors }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+
+                    <!-- 已預訂日期提示 -->
+                    <div class="alert alert-warning mb-4" id="booked-dates-alert" style="display: none;">
+                        <h6><i class="bi bi-exclamation-circle"></i> 已被預訂的日期</h6>
+                        <p class="mb-2">以下日期已被其他房客預訂，請選擇其他日期：</p>
+                        <div id="booked-dates-display" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <form method="post" id="booking-form">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.check_in.label }} <span
+                                        class="text-danger">*</span></label>
+                                {{ form.check_in }}
+                                {% if form.check_in.errors %}
+                                <div class="text-danger small mt-1">{{ form.check_in.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.check_out.label }} <span
+                                        class="text-danger">*</span></label>
+                                {{ form.check_out }}
+                                {% if form.check_out.errors %}
+                                <div class="text-danger small mt-1">{{ form.check_out.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.guests.label }} <span class="text-danger">*</span></label>
+                            {{ form.guests }}
+                            <div class="form-text">最多 {{ property.max_guests }} 人</div>
+                            {% if form.guests.errors %}
+                            <div class="text-danger small mt-1">{{ form.guests.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- 实时价格预览 -->
+                        <div class="alert alert-info" id="price-preview-container" style="display: none;">
+                            <h6><i class="bi bi-calculator"></i> 價格計算</h6>
+                            <div id="price-preview"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.notes.label }}</label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                            <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                                <i class="bi bi-check-circle"></i> 確認預訂
+                            </button>
+                            <a href="{% url 'property_detail' property.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> 返回房源
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- 可用日期日曆 -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-calendar3"></i> 可用日期日曆</h6>
+                </div>
+                <div class="card-body">
+                    <div id="availability-calendar"></div>
+                    <div class="mt-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <small class="me-2">可預訂 →</small>
+                            <span
+                                style="display: inline-block; width: 30px; height: 20px; background-color: #d4edda; border: 1px solid #c3e6cb;"></span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <small class="me-2">已被預訂 →</small>
+                            <span
+                                style="display: inline-block; width: 30px; height: 20px; background-color: #f8d7da; border: 1px solid #f5c6cb;"></span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <small class="me-2">過去日期 →</small>
+                            <span
+                                style="display: inline-block; width: 30px; height: 20px; background-color: #e9ecef; border: 1px solid #dee2e6;"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <h5 class="card-title">房源資訊</h5>
+                    <hr>
+
+                    {% if property.images.first %}
+                    <img src="{{ property.images.first.image.url }}" class="img-fluid rounded mb-3"
+                        alt="{{ property.title }}">
+                    {% endif %}
+
+                    <h6 class="fw-bold">{{ property.title }}</h6>
+                    <p class="text-muted small mb-2">
+                        <i class="bi bi-geo-alt"></i> {{ property.city }} {{ property.district }}
+                    </p>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="bi bi-door-open"></i> 臥室</span>
+                            <span>{{ property.bedrooms }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="bi bi-water"></i> 浴室</span>
+                            <span>{{ property.bathrooms }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span><i class="bi bi-people"></i> 最多人數</span>
+                            <span>{{ property.max_guests }}</span>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="text-center">
+                        <h4 class="text-primary mb-0">${{ property.price_per_night }}</h4>
+                        <small class="text-muted">/ 晚</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #availability-calendar {
+        width: 100%;
+    }
+
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+
+    .calendar-day-header {
+        text-align: center;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 5px;
+        color: #666;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .calendar-day.available {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .calendar-day.available:hover {
+        background-color: #c3e6cb;
+        transform: scale(1.1);
+    }
+
+    .calendar-day.booked {
+        background-color: #f8d7da;
+        color: #721c24;
+        cursor: not-allowed;
+    }
+
+    .calendar-day.past {
+        background-color: #e9ecef;
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+
+    .calendar-day.empty {
+        background-color: transparent;
+    }
+
+    .calendar-nav-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 5px 10px;
+    }
+
+    .calendar-nav-btn:hover {
+        background-color: #f0f0f0;
+        border-radius: 4px;
+    }
+</style>
+
+<script>
+    // 全局变量
+    var currentYear = new Date().getFullYear();
+    var currentMonth = new Date().getMonth();
+    var globalBookedDates = [];
+
+    // 日历生成函数
+    function generateCalendar(year, month, bookedDates) {
+        var calendarDiv = document.getElementById('availability-calendar');
+        if (!calendarDiv) {
+            console.error('Calendar div not found');
+            return;
+        }
+
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        var firstDay = new Date(year, month, 1);
+        var lastDay = new Date(year, month + 1, 0);
+        var daysInMonth = lastDay.getDate();
+        var startingDayOfWeek = firstDay.getDay();
+
+        // 创建日历HTML
+        var html = '<div class="calendar-header">';
+        html += '<button class="calendar-nav-btn" onclick="changeMonth(-1)"><i class="bi bi-chevron-left"></i></button>';
+        html += '<span>' + year + '年 ' + (month + 1) + '月</span>';
+        html += '<button class="calendar-nav-btn" onclick="changeMonth(1)"><i class="bi bi-chevron-right"></i></button>';
+        html += '</div>';
+        html += '<div class="calendar-grid">';
+        html += '<div class="calendar-day-header">日</div>';
+        html += '<div class="calendar-day-header">一</div>';
+        html += '<div class="calendar-day-header">二</div>';
+        html += '<div class="calendar-day-header">三</div>';
+        html += '<div class="calendar-day-header">四</div>';
+        html += '<div class="calendar-day-header">五</div>';
+        html += '<div class="calendar-day-header">六</div>';
+
+        // 添加空白日期
+        for (var i = 0; i < startingDayOfWeek; i++) {
+            html += '<div class="calendar-day empty"></div>';
+        }
+
+        // 添加月份中的日期
+        for (var day = 1; day <= daysInMonth; day++) {
+            var date = new Date(year, month, day);
+            var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+
+            var className = 'calendar-day ';
+            if (date < today) {
+                className += 'past';
+            } else if (bookedDates.indexOf(dateStr) !== -1) {
+                className += 'booked';
+            } else {
+                className += 'available';
+            }
+
+            html += '<div class="' + className + '">' + day + '</div>';
+        }
+
+        html += '</div>';
+        calendarDiv.innerHTML = html;
+
+        console.log('Calendar generated for ' + year + '-' + (month + 1));
+    }
+
+    function changeMonth(delta) {
+        currentMonth += delta;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        } else if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        generateCalendar(currentYear, currentMonth, globalBookedDates);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOM Content Loaded');
+
+        // 从后端获取已预订日期
+        var bookedDatesStr = '{{ booked_dates|escapejs }}';
+        var bookedDates = [];
+        if (bookedDatesStr) {
+            try {
+                bookedDates = JSON.parse(bookedDatesStr);
+            } catch (e) {
+                console.error('Parse error:', e);
+            }
+        }
+        globalBookedDates = bookedDates;
+
+        console.log('Booked dates:', bookedDates);
+
+        // 生成当前月份的日历
+        generateCalendar(currentYear, currentMonth, bookedDates);
+
+        var checkInInput = document.querySelector('input[name="check_in"]');
+        var checkOutInput = document.querySelector('input[name="check_out"]');
+        var pricePerNight = parseFloat('{{ property.price_per_night }}');
+        var pricePreview = document.getElementById('price-preview');
+        var priceContainer = document.getElementById('price-preview-container');
+        var form = document.getElementById('booking-form');
+        var submitBtn = document.getElementById('submit-btn');
+        var bookedDatesAlert = document.getElementById('booked-dates-alert');
+        var bookedDatesDisplay = document.getElementById('booked-dates-display');
+
+        // 显示已预订日期
+        if (bookedDates && bookedDates.length > 0) {
+            bookedDatesAlert.style.display = 'block';
+
+            // 将连续日期分组显示
+            var dateGroups = groupConsecutiveDates(bookedDates);
+            dateGroups.forEach(function (group) {
+                var badge = document.createElement('span');
+                badge.className = 'badge bg-danger';
+                badge.textContent = group;
+                bookedDatesDisplay.appendChild(badge);
+            });
+        }
+
+        // 设置最小日期为今天
+        var today = new Date().toISOString().split('T')[0];
+        checkInInput.setAttribute('min', today);
+        checkOutInput.setAttribute('min', today);
+
+        // 当选择入住日期时，自动设置退房日期最小值
+        checkInInput.addEventListener('change', function () {
+            var checkIn = this.value;
+            if (checkIn) {
+                var nextDay = new Date(checkIn);
+                nextDay.setDate(nextDay.getDate() + 1);
+                checkOutInput.setAttribute('min', nextDay.toISOString().split('T')[0]);
+                calculatePrice();
+                checkDateConflict();
+            }
+        });
+
+        // 当选择退房日期时，计算价格
+        checkOutInput.addEventListener('change', function () {
+            calculatePrice();
+            checkDateConflict();
+        });
+
+        // 检查日期冲突
+        function checkDateConflict() {
+            var checkIn = checkInInput.value;
+            var checkOut = checkOutInput.value;
+
+            if (checkIn && checkOut && bookedDates.length > 0) {
+                var selectedDates = getDateRange(checkIn, checkOut);
+                var hasConflict = selectedDates.some(function (date) {
+                    return bookedDates.indexOf(date) !== -1;
+                });
+
+                if (hasConflict) {
+                    alert('警告：您選擇的日期範圍包含已被預訂的日期，請重新選擇。');
+                    checkInInput.value = '';
+                    checkOutInput.value = '';
+                }
+            }
+        }
+
+        // 获取日期范围内的所有日期
+        function getDateRange(start, end) {
+            var dates = [];
+            var startDate = new Date(start);
+            var endDate = new Date(end);
+
+            while (startDate < endDate) {
+                dates.push(startDate.toISOString().split('T')[0]);
+                startDate.setDate(startDate.getDate() + 1);
+            }
+            return dates;
+        }
+
+        // 将连续日期分组显示
+        function groupConsecutiveDates(dates) {
+            if (!dates || dates.length === 0) return [];
+
+            var sorted = dates.slice().sort();
+            var groups = [];
+            var start = sorted[0];
+            var end = sorted[0];
+
+            for (var i = 1; i < sorted.length; i++) {
+                var current = new Date(sorted[i]);
+                var prev = new Date(sorted[i - 1]);
+                var diff = (current - prev) / (1000 * 60 * 60 * 24);
+
+                if (diff === 1) {
+                    end = sorted[i];
+                } else {
+                    groups.push(start === end ? start : start + ' ~ ' + end);
+                    start = sorted[i];
+                    end = sorted[i];
+                }
+            }
+            groups.push(start === end ? start : start + ' ~ ' + end);
+            return groups;
+        }
+
+        // 实时价格计算
+        function calculatePrice() {
+            var checkIn = checkInInput.value;
+            var checkOut = checkOutInput.value;
+
+            if (checkIn && checkOut) {
+                var start = new Date(checkIn);
+                var end = new Date(checkOut);
+                var nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
+                if (nights > 0) {
+                    var total = nights * pricePerNight;
+                    pricePreview.innerHTML = '<div class="d-flex justify-content-between align-items-center">' +
+                        '<span><strong>' + nights + '</strong> 晚 × $' + pricePerNight.toLocaleString() + '</span>' +
+                        '<h5 class="text-primary mb-0">$' + total.toLocaleString() + '</h5>' +
+                        '</div>';
+                    priceContainer.style.display = 'block';
+                } else {
+                    priceContainer.style.display = 'none';
+                }
+            } else {
+                priceContainer.style.display = 'none';
+            }
+        }
+
+        // 表单提交处理（防止重复提交）
+        form.addEventListener('submit', function (e) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>處理中...';
+        });
+    });
+</script>
+{% endblock %}

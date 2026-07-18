@@ -1,0 +1,209 @@
+{% extends 'properties/base.html' %}
+
+{% block title %}{% if property %}編輯房源{% else %}發布房源{% endif %} - Short Stay{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h2 class="mb-4">
+                {% if property %}
+                <i class="bi bi-pencil"></i> 編輯房源
+                {% else %}
+                <i class="bi bi-plus-circle"></i> 發布新房源
+                {% endif %}
+            </h2>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <h5><i class="bi bi-exclamation-triangle"></i> 表單驗證失敗</h5>
+                    <ul class="mb-0">
+                        {% for field in form %}
+                        {% if field.errors %}
+                        <li><strong>{{ field.label }}:</strong> {{ field.errors|striptags }}</li>
+                        {% endif %}
+                        {% endfor %}
+                        {% if form.non_field_errors %}
+                        <li>{{ form.non_field_errors|striptags }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">基本資訊</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.title.label }}</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                            <div class="text-danger">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.property_type.label }}</label>
+                            {{ form.property_type }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">位置資訊</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.city.label }}</label>
+                                {{ form.city }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.district.label }}</label>
+                                {{ form.district }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.address.label }}</label>
+                            {{ form.address }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">房源詳情</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.bedrooms.label }}</label>
+                                {{ form.bedrooms }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.bathrooms.label }}</label>
+                                {{ form.bathrooms }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.max_guests.label }}</label>
+                                {{ form.max_guests }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.price_per_night.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.price_per_night }}
+                            </div>
+                        </div>
+                        <div class="form-check">
+                            {{ form.is_available }}
+                            <label class="form-check-label">
+                                {{ form.is_available.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ form.amenities.label }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for checkbox in form.amenities %}
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check">
+                                    {{ checkbox.tag }}
+                                    <label class="form-check-label">
+                                        {{ checkbox.choice_label }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if is_new %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-images"></i> 上傳房源圖片
+                            <small class="text-muted">（可選，也可稍後上傳）</small>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">選擇圖片</label>
+                            <input type="file" name="images" class="form-control" accept="image/*" multiple>
+                            <small class="form-text text-muted">
+                                <i class="bi bi-info-circle"></i> 可以一次選擇多張圖片。第一張圖片將自動設為封面。
+                            </small>
+                        </div>
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-lightbulb"></i>
+                            <strong>提示：</strong>建議上傳至少 3-5 張圖片，包括客廳、臥室、浴室等不同角度。
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if property %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">房源圖片</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if images %}
+                        <div class="row row-cols-2 row-cols-md-3 g-3 mb-3">
+                            {% for image in images %}
+                            <div class="col">
+                                <div class="position-relative">
+                                    <img src="{{ image.image.url }}" class="img-fluid rounded" alt="房源圖片">
+                                    {% if image.is_cover %}
+                                    <span class="badge bg-primary position-absolute top-0 start-0 m-2">封面</span>
+                                    {% endif %}
+                                    <a href="{% url 'property_delete_image' property.pk image.pk %}"
+                                        class="btn btn-sm btn-danger position-absolute bottom-0 end-0 m-2"
+                                        onclick="event.preventDefault(); if(confirm('確定要刪除這張圖片嗎？')) { var form = document.createElement('form'); form.method='POST'; form.action=this.href; var csrf = document.createElement('input'); csrf.type='hidden'; csrf.name='csrfmiddlewaretoken'; csrf.value='{{ csrf_token }}'; form.appendChild(csrf); document.body.appendChild(form); form.submit(); }">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <a href="{% url 'property_upload_image' property.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-image"></i> 上傳圖片
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> 保存
+                    </button>
+                    <a href="{% url 'landlord_properties' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> 取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

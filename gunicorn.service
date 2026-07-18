@@ -1,0 +1,19 @@
+[Unit]
+Description=Gunicorn daemon for Short Stay Django Application
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/var/www/short_stay
+Environment="PATH=/var/www/short_stay/venv/bin"
+
+ExecStart=/var/www/short_stay/venv/bin/gunicorn \
+    --workers 3 \
+    --bind unix:/var/www/short_stay/short_stay.sock \
+    --access-logfile /var/www/short_stay/logs/gunicorn-access.log \
+    --error-logfile /var/www/short_stay/logs/gunicorn-error.log \
+    short_stay.wsgi:application
+
+[Install]
+WantedBy=multi-user.target

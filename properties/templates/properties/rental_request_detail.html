@@ -1,0 +1,219 @@
+{% extends 'properties/base.html' %}
+
+{% block title %}{{ request_obj.title }} - Short Stay{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'rental_requests_list' %}">租客需求</a></li>
+                    <li class="breadcrumb-item active">{{ request_obj.title }}</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0"><i class="bi bi-search-heart"></i> {{ request_obj.title }}</h2>
+                </div>
+                <div class="card-body">
+                    <!-- 發布者信息 -->
+                    <div class="alert alert-light">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-person-circle fs-3 me-3"></i>
+                            <div>
+                                <strong>租客：</strong>{{ request_obj.tenant.username }}<br>
+                                <small class="text-muted">發布於 {{ request_obj.created_at|date:"Y年m月d日 H:i" }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 需求描述 -->
+                    <h5 class="mt-4"><i class="bi bi-card-text"></i> 需求描述</h5>
+                    <p class="lead">{{ request_obj.description }}</p>
+
+                    <hr>
+
+                    <!-- 基本需求 -->
+                    <h5><i class="bi bi-info-circle"></i> 基本需求</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">房源類型</h6>
+                                    <p class="card-text fs-5">
+                                        <span class="badge bg-primary">{{ request_obj.get_property_type_display
+                                            }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">預算範圍</h6>
+                                    <p class="card-text fs-5">
+                                        <span class="badge bg-success">{{ request_obj.get_budget_range_display }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- 位置偏好 -->
+                    <h5><i class="bi bi-geo-alt"></i> 位置偏好</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>偏好城市：</strong>{{ request_obj.preferred_city }}</p>
+                        </div>
+                        {% if request_obj.preferred_district %}
+                        <div class="col-md-6">
+                            <p><strong>偏好區域：</strong>{{ request_obj.preferred_district }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    <!-- 房間需求 -->
+                    <h5><i class="bi bi-door-open"></i> 房間需求</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>臥室：</strong>至少 {{ request_obj.min_bedrooms }} 間</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>浴室：</strong>至少 {{ request_obj.min_bathrooms }} 間</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>入住人數：</strong>{{ request_obj.max_guests }} 人</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- 時間需求 -->
+                    <h5><i class="bi bi-calendar"></i> 時間需求</h5>
+                    <div class="row">
+                        {% if request_obj.move_in_date %}
+                        <div class="col-md-6">
+                            <p><strong>期望入住日期：</strong>{{ request_obj.move_in_date|date:"Y年m月d日" }}</p>
+                        </div>
+                        {% endif %}
+                        {% if request_obj.rental_duration %}
+                        <div class="col-md-6">
+                            <p><strong>租期：</strong>{{ request_obj.rental_duration }} 天</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    <!-- 期望設施 -->
+                    {% if request_obj.desired_amenities %}
+                    <h5><i class="bi bi-star"></i> 期望設施</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for amenity in request_obj.desired_amenities %}
+                        <span class="badge bg-secondary">{{ amenity }}</span>
+                        {% endfor %}
+                    </div>
+                    <hr>
+                    {% endif %}
+
+                    <!-- 訊息交流區域 -->
+                    <h5><i class="bi bi-chat-dots"></i> 訊息交流</h5>
+
+                    {% if request_messages %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            {% for msg in request_messages %}
+                            <div class="mb-3 {% if msg.sender == user %}text-end{% endif %}">
+                                <div
+                                    class="d-flex {% if msg.sender == user %}justify-content-end{% endif %} align-items-start">
+                                    <div
+                                        class="{% if msg.sender == user %}me-2{% else %}ms-2{% endif %} order-{% if msg.sender == user %}1{% else %}2{% endif %}">
+                                        <i class="bi bi-person-circle fs-4 text-primary"></i>
+                                    </div>
+                                    <div class="order-{% if msg.sender == user %}2{% else %}1{% endif %}">
+                                        <div class="card {% if msg.sender == user %}bg-primary text-white{% else %}bg-light{% endif %}"
+                                            style="max-width: 70%;">
+                                            <div class="card-body py-2 px-3">
+                                                <strong>{{ msg.sender.username }}</strong>
+                                                {% if msg.sender.role == 'landlord' %}
+                                                <span class="badge bg-success badge-sm">房東</span>
+                                                {% elif msg.sender.role == 'tenant' %}
+                                                <span class="badge bg-info badge-sm">租客</span>
+                                                {% endif %}
+                                                <p class="mb-1 mt-2">{{ msg.content }}</p>
+                                                <small
+                                                    class="{% if msg.sender == user %}text-white-50{% else %}text-muted{% endif %}">
+                                                    {{ msg.created_at|date:"Y/m/d H:i" }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 目前還沒有訊息
+                    </div>
+                    {% endif %}
+
+                    {% if message_form %}
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <i class="bi bi-envelope"></i> 發送訊息
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    {{ message_form.content }}
+                                    {% if message_form.content.errors %}
+                                    <div class="text-danger small">{{ message_form.content.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-send"></i> 發送
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% elif not user.is_authenticated %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> 請先 <a href="{% url 'login' %}">登入</a> 才能發送訊息
+                    </div>
+                    {% endif %}
+
+                    <hr>
+
+                    <!-- 操作按鈕 -->
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <a href="{% url 'rental_requests_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> 返回列表
+                        </a>
+                        {% if user == request_obj.tenant %}
+                        <div>
+                            <a href="{% url 'edit_rental_request' request_obj.pk %}" class="btn btn-warning">
+                                <i class="bi bi-pencil"></i> 編輯
+                            </a>
+                            <a href="{% url 'delete_rental_request' request_obj.pk %}" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> 刪除
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

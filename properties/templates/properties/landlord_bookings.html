@@ -1,0 +1,204 @@
+{% extends 'properties/base.html' %}
+
+{% block title %}預訂管理 - Short Stay{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-clipboard-check"></i> 預訂管理</h2>
+
+        <!-- 状态筛选按钮组 (JavaScript实现) -->
+        <div class="btn-group" role="group" aria-label="状态筛选">
+            <button type="button" class="btn btn-sm btn-outline-primary active" data-filter="all">
+                全部 <span class="badge bg-primary" id="count-all">0</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-warning" data-filter="pending">
+                待確認 <span class="badge bg-warning text-dark" id="count-pending">0</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-success" data-filter="confirmed">
+                已確認 <span class="badge bg-success" id="count-confirmed">0</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" data-filter="cancelled">
+                已取消 <span class="badge bg-danger" id="count-cancelled">0</span>
+            </button>
+        </div>
+    </div>
+
+    {% if bookings %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>預訂編號</th>
+                    <th>房源</th>
+                    <th>租客</th>
+                    <th>入住日期</th>
+                    <th>天數</th>
+                    <th>人數</th>
+                    <th>金額</th>
+                    <th>狀態</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="bookings-table">
+                {% for booking in bookings %}
+                <tr class="booking-row" data-status="{{ booking.status }}">
+                    <td>
+                        <span class="badge bg-secondary">{{ booking.booking_number }}</span><br>
+                        <small class="text-muted">{{ booking.created_at|date:"Y-m-d H:i" }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ booking.property.title }}</strong><br>
+                        <small class="text-muted">{{ booking.property.city }}</small>
+                    </td>
+                    <td>{{ booking.tenant.username }}</td>
+                    <td>
+                        {{ booking.check_in }}<br>
+                        <small class="text-muted">至 {{ booking.check_out }}</small>
+                    </td>
+                    <td>{{ booking.get_nights }} 晚</td>
+                    <td>{{ booking.guests }} 人</td>
+                    <td><strong>${{ booking.total_price }}</strong></td>
+                    <td>
+                        <span class="badge 
+                            {% if booking.status == 'pending' %}bg-warning text-dark
+                            {% elif booking.status == 'confirmed' %}bg-success
+                            {% elif booking.status == 'cancelled' %}bg-danger
+                            {% elif booking.status == 'completed' %}bg-info
+                            {% endif %}">
+                            {{ booking.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if booking.status == 'pending' %}
+                        <form method="post" action="{% url 'update_booking_status' booking.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="confirmed">
+                            <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('確認接受這個預訂？')">
+                                <i class="bi bi-check-circle"></i> 確認
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'update_booking_status' booking.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="cancelled">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('確認拒絕這個預訂？')">
+                                <i class="bi bi-x-circle"></i> 拒絕
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 无结果提示 -->
+    <div id="no-results" class="alert alert-info text-center py-5" style="display: none;">
+        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+        <h4 class="mt-3">沒有符合條件的預訂</h4>
+        <p>請嘗試其他篩選條件</p>
+    </div>
+
+    {% else %}
+    <div class="alert alert-info text-center py-5">
+        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+        <h4 class="mt-3">目前沒有預訂記錄</h4>
+        <p>當有租客預訂您的房源時，會顯示在這裡</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 计算各状态数量
+        function updateCounts() {
+            const rows = document.querySelectorAll('.booking-row');
+            const counts = {
+                all: rows.length,
+                pending: 0,
+                confirmed: 0,
+                cancelled: 0,
+                completed: 0
+            };
+
+            rows.forEach(row => {
+                const status = row.dataset.status;
+                if (counts[status] !== undefined) {
+                    counts[status]++;
+                }
+            });
+
+            // 更新徽章计数
+            document.getElementById('count-all').textContent = counts.all;
+            document.getElementById('count-pending').textContent = counts.pending;
+            document.getElementById('count-confirmed').textContent = counts.confirmed;
+            document.getElementById('count-cancelled').textContent = counts.cancelled;
+        }
+
+        // 筛选功能
+        function filterBookings(status) {
+            const rows = document.querySelectorAll('.booking-row');
+            const noResults = document.getElementById('no-results');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                if (status === 'all' || row.dataset.status === status) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // 显示/隐藏无结果提示
+            if (visibleCount === 0) {
+                document.querySelector('.table-responsive').style.display = 'none';
+                noResults.style.display = 'block';
+            } else {
+                document.querySelector('.table-responsive').style.display = 'block';
+                noResults.style.display = 'none';
+            }
+        }
+
+        // 按钮点击事件
+        document.querySelectorAll('[data-filter]').forEach(button => {
+            button.addEventListener('click', function () {
+                // 更新按钮样式
+                document.querySelectorAll('[data-filter]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+
+                // 执行筛选
+                filterBookings(this.dataset.filter);
+            });
+        });
+
+        // 初始化计数
+        updateCounts();
+    });
+</script>
+
+<style>
+    .btn-group .btn {
+        border-radius: 0;
+    }
+
+    .btn-group .btn:first-child {
+        border-top-left-radius: 0.25rem;
+        border-bottom-left-radius: 0.25rem;
+    }
+
+    .btn-group .btn:last-child {
+        border-top-right-radius: 0.25rem;
+        border-bottom-right-radius: 0.25rem;
+    }
+
+    .btn-group .badge {
+        margin-left: 0.25rem;
+    }
+</style>
+{% endblock %}

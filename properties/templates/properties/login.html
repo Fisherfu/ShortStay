@@ -1,0 +1,56 @@
+{% extends 'properties/base.html' %}
+
+{% block title %}登入 - Short Stay{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h3 class="text-center mb-4">
+                        <i class="bi bi-house-heart"></i> Short Stay
+                    </h3>
+                    <h5 class="text-center text-muted mb-4">會員登入</h5>
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        用戶名或密碼錯誤，請重試。
+                    </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">用戶名</label>
+                            <input type="text" name="username" class="form-control" required autofocus>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">密碼</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 btn-lg">
+                            <i class="bi bi-box-arrow-in-right"></i> 登入
+                        </button>
+                        <input type="hidden" name="next" value="{{ next }}">
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <p class="text-muted mb-3">還沒有帳號？</p>
+                        <a href="{% url 'register' %}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-person-plus"></i> 註冊租客帳號
+                        </a>
+                        <p class="text-muted small mt-3">
+                            <i class="bi bi-info-circle"></i> 註冊後即可開始預訂房源<br>
+                            如需成為房東，請聯繫管理員
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends 'properties/base.html' %}
+
+{% block title %}{% if is_new %}發布找房需求{% else %}編輯需求{% endif %} - Short Stay{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h2 class="mb-4">
+                <i class="bi bi-{% if is_new %}plus-circle{% else %}pencil{% endif %}"></i>
+                {% if is_new %}發布找房需求{% else %}編輯需求{% endif %}
+            </h2>
+
+            <div class="card shadow">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- 基本信息 -->
+                        <h5 class="mb-3"><i class="bi bi-info-circle"></i> 基本信息</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.title.label }}</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                            <div class="text-danger small">{{ form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            <div class="form-text">詳細描述您的找房需求，例如特殊要求、偏好等</div>
+                            {% if form.description.errors %}
+                            <div class="text-danger small">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.property_type.label }}</label>
+                                {{ form.property_type }}
+                                {% if form.property_type.errors %}
+                                <div class="text-danger small">{{ form.property_type.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.budget_range.label }}</label>
+                                {{ form.budget_range }}
+                                {% if form.budget_range.errors %}
+                                <div class="text-danger small">{{ form.budget_range.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- 位置偏好 -->
+                        <h5 class="mb-3"><i class="bi bi-geo-alt"></i> 位置偏好</h5>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.preferred_city.label }}</label>
+                                {{ form.preferred_city }}
+                                {% if form.preferred_city.errors %}
+                                <div class="text-danger small">{{ form.preferred_city.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.preferred_district.label }}</label>
+                                {{ form.preferred_district }}
+                                <div class="form-text">選填</div>
+                                {% if form.preferred_district.errors %}
+                                <div class="text-danger small">{{ form.preferred_district.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- 房間需求 -->
+                        <h5 class="mb-3"><i class="bi bi-door-open"></i> 房間需求</h5>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.min_bedrooms.label }}</label>
+                                {{ form.min_bedrooms }}
+                                {% if form.min_bedrooms.errors %}
+                                <div class="text-danger small">{{ form.min_bedrooms.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.min_bathrooms.label }}</label>
+                                {{ form.min_bathrooms }}
+                                {% if form.min_bathrooms.errors %}
+                                <div class="text-danger small">{{ form.min_bathrooms.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.max_guests.label }}</label>
+                                {{ form.max_guests }}
+                                {% if form.max_guests.errors %}
+                                <div class="text-danger small">{{ form.max_guests.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- 時間需求 -->
+                        <h5 class="mb-3"><i class="bi bi-calendar"></i> 時間需求</h5>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.move_in_date.label }}</label>
+                                {{ form.move_in_date }}
+                                <div class="form-text">選填</div>
+                                {% if form.move_in_date.errors %}
+                                <div class="text-danger small">{{ form.move_in_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.rental_duration.label }}</label>
+                                {{ form.rental_duration }}
+                                <div class="form-text">選填，預計租住天數</div>
+                                {% if form.rental_duration.errors %}
+                                <div class="text-danger small">{{ form.rental_duration.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- 期望設施 -->
+                        <h5 class="mb-3"><i class="bi bi-star"></i> 期望設施</h5>
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.desired_amenities.label }}</label>
+                            <div class="row">
+                                {% for choice in form.desired_amenities %}
+                                <div class="col-md-4 col-6">
+                                    <div class="form-check">
+                                        {{ choice }}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-text">選擇您期望的房源設施（可多選）</div>
+                            {% if form.desired_amenities.errors %}
+                            <div class="text-danger small">{{ form.desired_amenities.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <hr>
+
+                        <!-- 提交按鈕 -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% if is_new %}{% url 'rental_requests_list' %}{% else %}{% url 'rental_request_detail' request_obj.pk %}{% endif %}"
+                                class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> 取消
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle"></i>
+                                {% if is_new %}發布需求{% else %}保存更改{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
